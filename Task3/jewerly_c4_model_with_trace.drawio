@@ -1,6 +1,6 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.8 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36" modified="2025-11-23T17:33:58.014Z" version="24.4.8" etag="fpU7kzyMY2JjlA4PWdJN" type="device">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.8 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36" modified="2025-11-23T18:35:28.593Z" etag="QizIZ4h6NqB3z-FFDwDQ" version="24.4.8" type="device">
   <diagram name="Monitoring Architecture" id="q5gKrhV2WKv8pvfnoQvh">
-    <mxGraphModel dx="2825" dy="1615" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="3395" dy="2175" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -178,6 +178,18 @@
         </mxCell>
         <mxCell id="Tracing-Edge-MQ-Collector" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#b85450;strokeWidth=2;fillColor=#f8cecc;fontColor=#000000;exitPerimeter=0;" parent="1" source="6bDfexBDMjg7O7AECw8N-2" target="Jaeger-Collector" edge="1">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="1BJAG7XO0u2E2I8wNYZR-2" value="T" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.pentagon;verticalAlign=middle;fontSize=15;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="290" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="1BJAG7XO0u2E2I8wNYZR-3" value="T" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.pentagon;verticalAlign=middle;fontSize=15;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="555" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="1BJAG7XO0u2E2I8wNYZR-4" value="T" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.pentagon;verticalAlign=middle;fontSize=15;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="730" y="900" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="1BJAG7XO0u2E2I8wNYZR-5" value="T" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.pentagon;verticalAlign=middle;fontSize=15;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1630" y="650" width="30" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
