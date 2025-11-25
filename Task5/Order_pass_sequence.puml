@@ -1,0 +1,106 @@
+@startuml
+title Последовательность: Чтение списка заказов и изменение статуса заказа (с Cache-Aside)
+
+/' Участники '/
+actor "Клиент\n(Интернет-магазин UI)" as Customer
+participant "Интерфейс\nИнтернет-магазина" as UI
+participant "Shop API\n(HTTP REST)" as ShopAPI
+participant "Redis Кэш\n(Хранилище кеша)" as Redis
+participant "БД магазина\n(Postgres)" as ShopDB
+participant "RabbitMQ\n(Шина сообщений)" as MQ
+participant "Инвалидатор кеша\n(worker)" as Invalidator
+participant "MES API\n(Расчёт / UI оператора)" as MESAPI
+participant "БД MES\n(Postgres)" as MESDB
+participant "CRM API\n(потребитель)" as CRMAPI
+
+== Чтение: Клиент открывает список заказов (GET /orders?status=NEW) ==
+Customer -> UI : Открыть страницу заказов\n(GET /orders?status=NEW)\nrequest_id=REQ-123
+UI -> ShopAPI : GET /orders?status=NEW\nrequest_id=REQ-123
+activate ShopAPI
+
+ShopAPI -> Redis : GET orders:list:status=NEW\n(ключ = orders:list:status=NEW)
+activate Redis
+alt попадание в кэш
+    Redis --> ShopAPI : закешированный список (payload)\n(hit, напр. 200 элементов)
+    note right of Redis
+      Шаблон ключа кеша:
+      orders:list:status=<STATUS>
+      TTL: короткий (3-10s) для списков операторов
+    end note
+    deactivate Redis
+
+    ShopAPI --> UI : 200 OK (из кеша)\nrequest_id=REQ-123
+    deactivate ShopAPI
+else промах кэша
+    Redis --> ShopAPI : MISS (nil)
+    deactivate Redis
+
+    ShopAPI -> ShopDB : SELECT * FROM orders\nWHERE status='NEW' LIMIT ...
+    activate ShopDB
+    ShopDB --> ShopAPI : строки (свежие из БД)
+    deactivate ShopDB
+
+    ShopAPI -> Redis : SET orders:list:status=NEW = <payload>\nTTL=10s
+    activate Redis
+    Redis --> ShopAPI : OK (сохранено)
+    deactivate Redis
+
+    ShopAPI --> UI : 200 OK (свежий payload)\nrequest_id=REQ-123
+    deactivate ShopAPI
+end
+
+== Запись / Изменение статуса: оператор начинает производство ==
+
+' Пример: Оператор в MES UI переводит заказ в MANUFACTURING_STARTED
+actor "Оператор\n(MES UI)" as Operator
+Operator -> MESAPI : POST /orders/ORD-42/status\n{ status: MANUFACTURING_STARTED }\nrequest_id=REQ-234
+activate MESAPI
+
+MESAPI -> MESDB : UPDATE orders SET status='MANUFACTURING_STARTED'\nWHERE id='ORD-42'
+activate MESDB
+MESDB --> MESAPI : OK (обновлено)
+deactivate MESDB
+
+MESAPI -> MQ : опубликовать OrderStatusChanged{\n order_id: ORD-42,\n status: MANUFACTURING_STARTED,\n source: MES,\n request_id: REQ-234\n}
+deactivate MESAPI
+
+note right of MQ
+  MQ доставляет события заинтересованным потребителям:
+  - CRM API (может обновлять данные / триггерить действия)
+  - Инвалидатор кеша (инвалидирует кеши списков/деталей)
+  - Другие потребители (аналитика, нотификации)
+end note
+
+MQ -> Invalidator : доставить OrderStatusChanged{ORD-42, MANUFACTURING_STARTED}
+activate Invalidator
+
+Invalidator -> Redis : DEL orders:list:status=MANUFACTURING_STARTED
+activate Redis
+Redis --> Invalidator : OK (удалено)
+deactivate Redis
+
+' Вариант A: Инвалидатор также может проактивно обновить кеш конкретного заказа
+Invalidator -> ShopAPI : GET /orders/ORD-42 (чтобы обновить кеш, если нужно)
+activate ShopAPI
+ShopAPI -> ShopDB : SELECT * FROM orders WHERE id='ORD-42'
+activate ShopDB
+ShopDB --> ShopAPI : строка (свежая)
+deactivate ShopDB
+ShopAPI -> Redis : SET orders:detail:ORD-42 = <fresh row>\nTTL=30s
+activate Redis
+Redis --> ShopAPI : OK
+deactivate Redis
+ShopAPI --> Invalidator : 200 OK
+deactivate ShopAPI
+
+Invalidator --> MQ : emit AuditEvent{order:ORD-42, status:MANUFACTURING_STARTED, actor:Operator}
+deactivate Invalidator
+
+' Потребители получают событие из MQ
+MQ -> CRMAPI : доставить OrderStatusChanged{ORD-42, MANUFACTURING_STARTED}
+activate CRMAPI
+CRMAPI -> CRMAPI : (бизнес-логика)\nвозможно отметить в CRM или создать задачу
+CRMAPI --> MQ : (опционально) опубликовать дальнейшие события
+deactivate CRMAPI
+
+@enduml
